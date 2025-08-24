@@ -1,18 +1,29 @@
 import { Route, Routes } from 'react-router'
 import LayoutApp from '../pages/LayoutApp'
 import Accueil from '../pages/Accueil'
+import Login from '../pages/Login'
+import Register from '../pages/Register'
+import Profil from '../pages/Profil'
+import Verify from '../pages/Verify'
 import './App.css'
+import { AuthProvider } from '../contexts/auth.context'
 
 function App() {
   return (
-    <Routes>
-      <Route path='/' element={<LayoutApp />}>
-        <Route path='/' element={<Accueil />} />
+    <AuthProvider>
+      <Routes>
+        <Route path='/' element={<LayoutApp />}>
+          <Route index element={<Accueil />} />
+          <Route path='login' element={<Login />} />
+          <Route path='register' element={<Register />} />
+          <Route path='profil' element={<Profil/>} />
+          <Route path='verify/:token' element={<Verify />} />
 
 
 
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </AuthProvider>
   )
 }
 
