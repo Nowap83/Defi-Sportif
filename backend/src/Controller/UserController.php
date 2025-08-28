@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -10,11 +11,22 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Serializer\Annotation\Groups;
 
 
-#[Route('/user', name: 'api_user_')]
+#[Route('/user', name: 'user_')]
 final class UserController extends AbstractController
 {
+
+
+    #[Route('', name: 'index', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function index(UserRepository $userRepository): JsonResponse
+    {
+        $users = $userRepository->findAll();
+
+        return $this->json($users, 200, [], ['groups' => ['user_index']]);
+    }
     #[Route('/me', name: 'get_me', methods: ['GET'])]
     public function me(): JsonResponse
     {
@@ -35,6 +47,47 @@ final class UserController extends AbstractController
             'avatar' => $user->getAvatar()
         ]);
     }
+
+    #[Route('/me', name: 'update_me', methods: ['POST'])]
+    public function updateMe(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['nom'])) {
+            $user->setNom($data['nom']);
+        }
+        if (isset($data['prenom'])) {
+            $user->setPrenom($data['prenom']);
+        }
+        if (isset($data['email'])) {
+            $user->setEmail($data['email']);
+        }
+
+        $em->persist($user);
+        $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Profil mis à jour avec succès',
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'nom' => $user->getNom(),
+                'prenom' => $user->getPrenom(),
+                'roles' => $user->getRoles(),
+                'isActive' => $user->isActive(),
+                'dateCGU' => $user->getDateCGU()->format('Y-m-d'),
+                'avatar' => $user->getAvatar(),
+            ]
+        ]);
+    }
+
 
     #[Route('/me/avatar', name: 'avatar_upload', methods: ['POST'])]
     public function uploadAvatar(
@@ -70,4 +123,50 @@ final class UserController extends AbstractController
             'avatar' => $user->getAvatar(),
         ]);
     }
+
+     #[Route('/me/delete', name: 'delete_me', methods: ['DELETE'])]
+    public function deleteMe(EntityManagerInterface $em): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Utilisateur non authentifié'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $em->remove($user);
+        $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Votre compte a été supprimé avec succès'
+        ]);
+    }
+
+    #[IsGranted('ROLE_ADMIN')]
+     #[Route('/delete/{id}', name: 'delete', methods: ['DELETE'])]
+    public function deleteUser(int $id, UserRepository $userRepository, EntityManagerInterface $em): JsonResponse
+    {
+
+        $user = $userRepository->find($id);
+
+        if (!$user) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Utilisateur introuvable'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $em->remove($user);
+        $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => "L'utilisateur {$id} a été supprimé avec succès"
+        ]);
+    }
+
+
 }

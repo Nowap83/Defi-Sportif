@@ -3,9 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -13,15 +17,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
+    #[Groups(['user_index'])]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(['user_index'])]
     #[ORM\Column(length: 180)]
     private ?string $email = null;
 
+    
     /**
      * @var list<string> The user roles
      */
+    #[Groups(['user_index'])]
     #[ORM\Column]
     private array $roles = [];
 
@@ -31,18 +39,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[Groups(['user_index'])]
     #[ORM\Column(length: 255)]
     private ?string $nom = null;
 
+    #[Groups(['user_index'])]
     #[ORM\Column(length: 255)]
     private ?string $prenom = null;
 
     #[ORM\Column]
     private ?bool $isActive = null;
 
+    #[Groups(['user_index'])]
     #[ORM\Column]
     private ?\DateTimeImmutable $dateCGU = null;
 
+    #[Groups(['user_index'])]
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -51,6 +63,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $verificationToken = null;
+
+    /**
+     * @var Collection<int, Defi>
+     */
+    #[ORM\OneToMany(targetEntity: Defi::class, mappedBy: 'createur')]
+    private Collection $defisCCrees;
+
+    /**
+     * @var Collection<int, Inscription>
+     */
+    #[ORM\OneToMany(targetEntity: Inscription::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $inscriptions;
+
+    public function __construct()
+    {
+        $this->defisCCrees = new ArrayCollection();
+        $this->inscriptions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -213,6 +243,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerificationToken(?string $verificationToken): static
     {
         $this->verificationToken = $verificationToken;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Defi>
+     */
+    public function getDefisCCrees(): Collection
+    {
+        return $this->defisCCrees;
+    }
+
+    public function addDefisCCree(Defi $defisCCree): static
+    {
+        if (!$this->defisCCrees->contains($defisCCree)) {
+            $this->defisCCrees->add($defisCCree);
+            $defisCCree->setCreateur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDefisCCree(Defi $defisCCree): static
+    {
+        if ($this->defisCCrees->removeElement($defisCCree)) {
+            // set the owning side to null (unless already changed)
+            if ($defisCCree->getCreateur() === $this) {
+                $defisCCree->setCreateur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Inscription>
+     */
+    public function getInscriptions(): Collection
+    {
+        return $this->inscriptions;
+    }
+
+    public function addInscription(Inscription $inscription): static
+    {
+        if (!$this->inscriptions->contains($inscription)) {
+            $this->inscriptions->add($inscription);
+            $inscription->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeInscription(Inscription $inscription): static
+    {
+        if ($this->inscriptions->removeElement($inscription)) {
+            // set the owning side to null (unless already changed)
+            if ($inscription->getUser() === $this) {
+                $inscription->setUser(null);
+            }
+        }
 
         return $this;
     }
