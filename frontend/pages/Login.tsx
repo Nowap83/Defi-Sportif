@@ -1,4 +1,4 @@
-import React, { useState, useContext} from 'react'
+import React, { useState, useContext } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
@@ -44,11 +44,17 @@ const Login: React.FC = () => {
             toast.success("Connexion réussie")
             navigate("/profil")
         } catch (err) {
-            const error = err as AxiosError
-            toast.error(error.message || "Connexion échouée")
+            const error = err as AxiosError<any>;
+
+            if (error.response?.data?.message) {
+                toast.error(error.response.data.message);
+            } else {
+                toast.error(error.message || "Connexion échouée");
+            }
         } finally {
             setIsLoading(false)
         }
+
     }
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
