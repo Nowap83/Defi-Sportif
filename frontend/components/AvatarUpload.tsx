@@ -39,7 +39,7 @@ const AvatarUpload = ({ onUploaded }: { onUploaded: (url: string) => void }) => 
         onClick={handleUpload}
         className="px-4 py-2 rounded bg-[#daf020] hover:bg-black hover:text-[#daf020]"
       >
-        Upload Avatar
+        Changer de photo de profil
       </button>
     </div>
   );

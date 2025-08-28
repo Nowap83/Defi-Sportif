@@ -6,12 +6,14 @@ import { toast } from "react-hot-toast";
 import { useContext } from "react";
 
 const Header = () => {
-  const { token, setToken } = useContext(AuthContext)
+  const { user, token, setToken, setUser } = useContext(AuthContext)
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
+    setUser(null);
     toast.success("Déconnexion réussie");
     navigate("/login");
   };
@@ -30,16 +32,32 @@ const Header = () => {
         >
           AgoraFit
         </Link>
+        {user?.roles?.includes("ROLE_USER") && !user.roles.includes("ROLE_ADMIN") && (
+          <Link
+            to="/defis"
+            className="px-6 py-2 rounded-2xl font-semibold transition-all duration-300 bg-[#daf020] text-black hover:bg-black hover:text-[#daf020]"
+          >
+            Défis
+          </Link>
+        )}
+
+
+
       </div>
 
       <div className="flex gap-2 items-center">
         {token ? (
-          <button
-            onClick={handleLogout}
-            className="px-6 py-2 rounded-2xl font-semibold transition-all duration-300 bg-red-500 text-white hover:bg-red-600"
-          >
-            Déconnexion
-          </button>
+          <>
+            <Link to="/profil" className="px-6 py-2 rounded-2xl font-semibold transition-all duration-300 bg-[#daf020] text-black hover:bg-black hover:text-[#daf020]">
+              Profil
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2 rounded-2xl font-semibold transition-all duration-300 bg-red-500 text-white hover:bg-red-600"
+            >
+              Déconnexion
+            </button>
+          </>
         ) : (
           <>
             <LinkButton to="/register" variant="primary">
