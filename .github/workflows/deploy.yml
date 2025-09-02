@@ -32,12 +32,11 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        env:
-          APP_ENV: prod
         run: |
           rm -rf var/cache/*
-          composer install --no-dev --optimize-autoloader
+          composer install --no-dev --optimize-autoloader --no-scripts
           composer dump-autoload --optimize
+
 
 
       - name: Deploy to server
