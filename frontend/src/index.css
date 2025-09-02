@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-
 @font-face {
   font-family: "HeliosExtended";
   src: url("../fonts/heliosext-bold-italic.otf") format("opentype");
