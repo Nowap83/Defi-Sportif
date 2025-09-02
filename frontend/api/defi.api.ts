@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/defis";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://91.168.22.101/api";
 
 export interface Defi {
   id: number;
@@ -16,10 +16,10 @@ export interface Defi {
   image: string;
 }
 
-export const getDefis = async (token: string) => {
+export const getDefis = async (token: string): Promise<Defi[]> => {
   console.log("Getting defis with token:", token);
   try {
-    const res = await axios.get(API_URL, {
+    const res = await axios.get(`${API_BASE_URL}/defis`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     console.log("Get defis successful");
@@ -30,41 +30,60 @@ export const getDefis = async (token: string) => {
   }
 };
 
-export const deleteDefi = async (id: number, token: string) => {
-  return axios.delete(`${API_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const getDefi = async (id: number, token: string): Promise<Defi> => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/defis/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data;
+  } catch (error) {
+    console.error(`Get defi ${id} failed:`, error);
+    throw error;
+  }
 };
 
-export const updateDefi = async (token: string, id: number, updatedData: any): Promise<Defi> => {
-  const res = await axios.put(`${API_URL}/${id}`, updatedData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data.defi;
+export const deleteDefi = async (id: number, token: string): Promise<void> => {
+  try {
+    await axios.delete(`${API_BASE_URL}/defis/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(`Defi ${id} deleted successfully`);
+  } catch (error) {
+    console.error(`Delete defi ${id} failed:`, error);
+    throw error;
+  }
 };
 
-export const createDefi = async (data: FormData, token: string) => {
-  console.log("TOKEN USED IN createDefi:", token);
-  console.log("FormData contents:");
+export const updateDefi = async (id: number, updatedData: Partial<Defi>, token: string): Promise<Defi> => {
+  try {
+    const res = await axios.put(`${API_BASE_URL}/defis/${id}`, updatedData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(`Defi ${id} updated successfully`);
+    return res.data;
+  } catch (error) {
+    console.error(`Update defi ${id} failed:`, error);
+    throw error;
+  }
+};
+
+export const createDefi = async (data: FormData, token: string): Promise<Defi> => {
+  // Log des données pour le débogage
   for (let [key, value] of data.entries()) {
     console.log(key, value);
   }
 
   try {
-    const response = await axios.post(API_URL, data, {
+    const response = await axios.post(`${API_BASE_URL}/defis`, data, {
       headers: { 
         Authorization: `Bearer ${token}`,
-        // Don't set Content-Type for FormData - let axios set it automatically with boundary
+        "Content-Type": "multipart/form-data",
       },
     });
-    return response;
+    console.log("Defi created successfully");
+    return response.data;
   } catch (error: any) {
-    console.error("API Error:", error);
-    if (error.response) {
-      console.error("Error response:", error.response.data);
-      console.error("Error status:", error.response.status);
-      console.error("Error headers:", error.response.headers);
-    }
+    console.error("Error creating defi:", error);
     throw error;
   }
 };

@@ -3,7 +3,7 @@ const Accueil = () => {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center mb-15">
-        <img src="../src/assets/AgoraFit.png" alt="Logo AgoraFit" className="h-70 w-70 rounded-full object-cover mx-auto mb-10" />
+        <img src="/AgoraFit.png" alt="Logo AgoraFit" className="h-70 w-70 rounded-full object-cover mx-auto mb-10" />
         <h1 className="text-5xl font-bold text-primary">
           Bienvenue sur <span className="agora font-helios">AgoraFit</span>
         </h1>

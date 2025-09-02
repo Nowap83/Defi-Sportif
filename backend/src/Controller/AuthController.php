@@ -14,7 +14,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use App\Service\MailerService;
-
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[Route('/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
@@ -103,4 +104,160 @@ class AuthController extends AbstractController
             'data'    => ['email' => $user->getEmail()]
         ], 200);
     }
+    #[Route('/forgot-password', name: 'forgot_password', methods: ['POST'])]
+    public function forgotPassword(
+        Request $request, 
+        EntityManagerInterface $em, 
+        MailerService $mailer,
+        ValidatorInterface $validator
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        
+        if (!$data || !isset($data['email'])) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Email requis.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Validation de l'email
+        $violations = $validator->validate($data['email'], [
+            new Assert\NotBlank(),
+            new Assert\Email()
+        ]);
+
+        if (count($violations) > 0) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Format d\'email invalide.',
+                'status' => 400
+            ], 400);
+        }
+
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        
+        // On renvoie toujours un message de succès pour des raisons de sécurité
+        // (éviter l'énumération des emails existants)
+        if (!$user) {
+            return $this->json([
+                'success' => true,
+                'message' => 'Si cet email existe dans notre base, vous recevrez un lien de réinitialisation.',
+                'status' => 200
+            ], 200);
+        }
+
+        // Vérifier si l'utilisateur est actif
+        if (!$user->isActive()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Votre compte n\'est pas encore activé. Vérifiez votre email.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Générer un token de réinitialisation
+        $resetToken = bin2hex(random_bytes(32));
+        $user->setResetToken($resetToken);
+        $user->setResetTokenExpiresAt(new \DateTimeImmutable('+1 hour'));
+        
+        $em->flush();
+
+        // URL de réinitialisation
+        $resetUrl = 'http://localhost:5173/reset-password/' . $resetToken;
+        
+        $emailSent = $mailer->sendPasswordResetEmail(
+            $user->getEmail(), 
+            $user->getPrenom() ?: $user->getNom(), 
+            $resetUrl
+        );
+
+        if (!$emailSent) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.',
+                'status' => 500
+            ], 500);
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Si cet email existe dans notre base, vous recevrez un lien de réinitialisation.',
+            'status' => 200
+        ], 200);
+    }
+
+    #[Route('/reset-password', name: 'reset_password', methods: ['POST'])]
+    public function resetPassword(
+        Request $request, 
+        EntityManagerInterface $em, 
+        UserPasswordHasherInterface $hasher,
+        ValidatorInterface $validator
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        
+        if (!$data) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Données JSON invalides.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Vérification des champs requis
+        if (!isset($data['token']) || !isset($data['password'])) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Token et mot de passe requis.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Validation du mot de passe
+        $violations = $validator->validate($data['password'], [
+            new Assert\NotBlank(),
+            new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.')
+        ]);
+
+        if (count($violations) > 0) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Le mot de passe doit contenir au moins 8 caractères.',
+                'status' => 400
+            ], 400);
+        }
+
+        $user = $em->getRepository(User::class)->findOneBy(['resetToken' => $data['token']]);
+        
+        if (!$user) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Token de réinitialisation invalide.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Vérifier si le token n'a pas expiré
+        if ($user->getResetTokenExpiresAt() < new \DateTimeImmutable()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Le token de réinitialisation a expiré. Demandez un nouveau lien.',
+                'status' => 400
+            ], 400);
+        }
+
+        // Réinitialiser le mot de passe
+        $user->setPassword($hasher->hashPassword($user, $data['password']));
+        $user->setResetToken(null);
+        $user->setResetTokenExpiresAt(null);
+        
+        $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Votre mot de passe a été réinitialisé avec succès.',
+            'status' => 200
+        ], 200);
+    }
 }
+

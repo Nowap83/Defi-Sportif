@@ -9,17 +9,13 @@ use App\Repository\InscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/inscriptions', name: 'inscription_')]
 class InscriptionController extends AbstractController
 {
-    /**
-     * POST /defis/{id}/inscriptions
-     * Inscrire l’utilisateur courant à un défi
-     */
+
     #[Route('/defis/{id}', name: 'create', methods: ['POST'])]
     public function create(Defi $defi, EntityManagerInterface $em, InscriptionRepository $repo): JsonResponse
     {
@@ -28,7 +24,6 @@ class InscriptionController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Non authentifié'], 401);
         }
 
-        // Vérifier si déjà inscrit
         $existing = $repo->findOneBy(['user' => $user, 'defi' => $defi]);
         if ($existing) {
             return $this->json(['success' => false, 'message' => 'Déjà inscrit à ce défi'], 400);
@@ -37,7 +32,7 @@ class InscriptionController extends AbstractController
         $inscription = new Inscription();
         $inscription->setUser($user);
         $inscription->setDefi($defi);
-        $inscription->setStatut('en_attente');
+        $inscription->setDateInscription(new \DateTimeImmutable());
 
         $em->persist($inscription);
         $em->flush();
@@ -45,57 +40,85 @@ class InscriptionController extends AbstractController
         return $this->json([
             'success' => true,
             'message' => 'Inscription créée avec succès',
-            'inscription' => $inscription
-        ], 201, [], ['groups' => ['inscription:read']]);
+            'inscription' => [
+                'id' => $inscription->getId(),
+                'user' => $user->getEmail(),
+                'defi' => $defi->getTitre(),
+                'dateInscription' => $inscription->getDateInscription()->format('Y-m-d H:i:s')
+            ]
+        ], 201);
     }
 
-    /**
-     * GET /defis/{id}/inscriptions
-     * Liste des inscrits d’un défi (admin only)
-     */
+    #[Route('/defis/{id}/me', name: 'check_my_inscription', methods: ['GET'])]
+    public function checkMyInscription(
+        Defi $defi,
+        InscriptionRepository $repo
+    ): JsonResponse {
+        $user = $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json(['success' => false, 'message' => 'Non authentifié'], 401);
+        }
+
+        $inscription = $repo->findOneBy(['user' => $user, 'defi' => $defi]);
+
+        if (!$inscription) {
+            return $this->json([
+                'inscrit' => false
+            ], 200);
+        }
+
+        return $this->json([
+            'inscrit' => true,
+            'inscription' => [
+                'id' => $inscription->getId(),
+                'dateInscription' => $inscription->getDateInscription()->format('Y-m-d H:i:s')
+            ]
+        ], 200);
+    }
+
+
     #[IsGranted('ROLE_ADMIN')]
     #[Route('/defis/{id}', name: 'list', methods: ['GET'])]
     public function list(Defi $defi, InscriptionRepository $repo): JsonResponse
     {
         $inscriptions = $repo->findBy(['defi' => $defi]);
 
-        return $this->json($inscriptions, 200, [], ['groups' => ['inscription:read']]);
+        $data = array_map(fn(Inscription $i) => [
+            'id' => $i->getId(),
+            'user' => $i->getUser()->getEmail(),
+            'dateInscription' => $i->getDateInscription()->format('Y-m-d H:i:s')
+        ], $inscriptions);
+
+        return $this->json($data, 200);
     }
 
-    /**
-     * PATCH /inscriptions/{id}
-     * Modifier le statut d’une inscription (admin only)
-     */
     #[IsGranted('ROLE_ADMIN')]
-    #[Route('/{id}', name: 'update', methods: ['PATCH'])]
-    public function update(Request $request, Inscription $inscription, EntityManagerInterface $em): JsonResponse
+    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
+    public function delete(Inscription $inscription, EntityManagerInterface $em): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        if (isset($data['statut']) && in_array($data['statut'], ['validee', 'annulee'])) {
-            $inscription->setStatut($data['statut']);
-            $em->flush();
-            return $this->json(['success' => true, 'message' => 'Statut mis à jour']);
-        }
+        $em->remove($inscription);
+        $em->flush();
 
-        return $this->json(['success' => false, 'message' => 'Statut invalide'], 400);
+        return $this->json([
+            'success' => true,
+            'message' => 'Inscription supprimée avec succès'
+        ]);
     }
 
-    /**
-     * POST /inscriptions/{id}/request-cancel
-     * Demande de désinscription (utilisateur)
-     */
+
     #[Route('/{id}/request-cancel', name: 'request_cancel', methods: ['POST'])]
-    public function requestCancel(Inscription $inscription, EntityManagerInterface $em): JsonResponse
+    public function requestCancel(Inscription $inscription): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User || $inscription->getUser() !== $user) {
             return $this->json(['success' => false, 'message' => 'Accès refusé'], 403);
         }
 
-        // Ici on pourrait notifier l’admin, pour l’instant on change juste le statut
-        $inscription->setStatut('annulee');
-        $em->flush();
-
-        return $this->json(['success' => true, 'message' => 'Demande de désinscription envoyée'], 202);
+        //TODO MAILER A FAIRE
+        return $this->json([
+            'success' => true,
+            'message' => 'Votre demande de désinscription a été transmise à l’admin'
+        ], 202);
     }
 }

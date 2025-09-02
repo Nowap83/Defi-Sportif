@@ -22,7 +22,7 @@ const Header = () => {
     <div className="flex items-center justify-between bg-base-100 shadow-lg px-4 h-16">
       <div className="flex items-center gap-2">
         <img
-          src="../src/assets/AgoraRunningBG.png"
+          src="/AgoraRunningBG.png"
           alt="Logo AgoraFit"
           className="h-10"
         />

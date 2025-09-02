@@ -5,29 +5,35 @@ import { getDefis, deleteDefi, updateDefi } from "../api/defi.api";
 import { toast } from "react-hot-toast";
 import { type Defi } from "../api/defi.api";
 import EditDefiForm from "../components/EditDefiForm";
-
-
-
+import { inscrireAUnDefi, requestCancelInscription, checkMyInscription } from "../api/inscription.api";
 
 const Defis = () => {
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const [defis, setDefis] = useState<Defi[]>([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useContext(AuthContext);
   const [search, setSearch] = useState("");
   const [editingDefi, setEditingDefi] = useState<Defi | null>(null);
-
-
+  const [inscriptions, setInscriptions] = useState<Record<number, boolean>>({});
 
   const fetchDefis = async () => {
     try {
-      if (!token) {
-        console.error("Utilisateur non connecté");
-        return;
-      }
+      if (!token) return;
       const data = await getDefis(token);
-
       setDefis(data);
+
+      // Vérifie l'inscription de l'utilisateur à chaque défi
+      if (user?.roles.includes("ROLE_USER")) {
+        const status: Record<number, boolean> = {};
+        for (const defi of data) {
+          try {
+            const res = await checkMyInscription(defi.id, token);
+            status[defi.id] = !!res; // true si inscrit, false sinon
+          } catch {
+            status[defi.id] = false;
+          }
+        }
+        setInscriptions(status);
+      }
     } catch (err) {
       console.error("Erreur lors du chargement des défis", err);
     } finally {
@@ -35,6 +41,25 @@ const Defis = () => {
     }
   };
 
+  const handleInscrire = async (id: number) => {
+    try {
+      await inscrireAUnDefi(id, token!);
+      toast.success("Inscription réussie ✅");
+      fetchDefis();
+    } catch {
+      toast.error("Erreur lors de l'inscription ❌");
+    }
+  };
+
+  const handleAnnuler = async (id: number) => {
+    try {
+      await requestCancelInscription(id, token!);
+      toast.success("Demande d'annulation envoyée ✅");
+      fetchDefis();
+    } catch {
+      toast.error("Erreur lors de l'annulation ❌");
+    }
+  };
   const handleDelete = async (id: number) => {
     if (!window.confirm("Voulez-vous vraiment supprimer ce défi ?")) return;
 
@@ -64,7 +89,6 @@ const Defis = () => {
     toast.error("Erreur lors de la modification ❌");
   }
 };
-
 
   useEffect(() => {
     fetchDefis();
@@ -103,7 +127,6 @@ const Defis = () => {
           {filteredDefis.map((defi) => (
             <li key={defi.id} className="p-4 bg-white shadow rounded-xl">
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Image du défi */}
                 {defi.image && (
                   <div className="md:w-1/4">
                     <img
@@ -114,46 +137,44 @@ const Defis = () => {
                   </div>
                 )}
 
-                {/* Détails du défi */}
-                <div className={`${defi.image ? 'md:w-3/4' : 'w-full'}`}>
+                <div className={`${defi.image ? "md:w-3/4" : "w-full"}`}>
                   <h2 className="text-xl font-semibold text-blue-800">{defi.titre}</h2>
                   <p className="text-gray-600 mt-1">{defi.description}</p>
 
+                  {/* Infos défi */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">📅 Date:</span>
-                      <span>{new Date(defi.dateDefi).toLocaleDateString("fr-FR")}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">🏃 Type:</span>
-                      <span className="capitalize">{defi.typeDefi}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">📍 Région:</span>
-                      <span>{defi.region}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">🇫🇷 Pays:</span>
-                      <span>{defi.pays}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">📏 Distance:</span>
-                      <span>{defi.distance} km</span>
-                    </div>
-
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-500 mr-2">👥 Participants:</span>
-                      <span>{defi.minParticipant} - {defi.maxParticipant}</span>
-                    </div>
+                    <div className="text-sm">📅 {new Date(defi.dateDefi).toLocaleDateString("fr-FR")}</div>
+                    <div className="text-sm">🏃 {defi.typeDefi}</div>
+                    <div className="text-sm">📍 {defi.region}</div>
+                    <div className="text-sm">🇫🇷 {defi.pays}</div>
+                    <div className="text-sm">📏 {defi.distance} km</div>
+                    <div className="text-sm">👥 {defi.minParticipant} - {defi.maxParticipant}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Boutons d'action pour les admins */}
+              {/* Boutons pour les users */}
+              {user?.roles.includes("ROLE_USER") && (
+                <div className="mt-4 flex gap-2 justify-end border-t pt-3">
+                  {!inscriptions[defi.id] ? (
+                    <button
+                      onClick={() => handleInscrire(defi.id)}
+                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                    >
+                      ✅ S'inscrire
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAnnuler(defi.id)}
+                      className="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm"
+                    >
+                      ❌ Demander annulation
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Boutons pour les admins */}
               {user?.roles.includes("ROLE_ADMIN") && (
                 <div className="mt-4 flex gap-2 justify-end border-t pt-3">
                   <button
@@ -169,8 +190,6 @@ const Defis = () => {
                       onClose={() => setEditingDefi(null)}
                     />
                   )}
-
-
                   <button
                     onClick={() => handleDelete(defi.id)}
                     className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"

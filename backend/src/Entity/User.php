@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Entity;
 
 use App\Repository\UserRepository;
@@ -9,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
-
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -17,48 +16,65 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[Groups(['user_index'])]
+    #[Groups(['user_index', 'user_show'])]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['user_index'])]
+    #[Groups(['user_index', 'user_show'])]
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: "L'email est obligatoire.")]
+    #[Assert\Email(message: "L'email '{{ value }}' n'est pas valide.")]
     private ?string $email = null;
 
-    
     /**
      * @var list<string> The user roles
      */
-    #[Groups(['user_index'])]
+    #[Groups(['user_index', 'user_show'])]
     #[ORM\Column]
+    #[Assert\NotNull]
     private array $roles = [];
 
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Assert\NotBlank(message: "Le mot de passe est obligatoire.")]
+    #[Assert\Length(min: 8, minMessage: "Le mot de passe doit contenir au moins {{ limit }} caractères.")]
     private ?string $password = null;
 
-    #[Groups(['user_index'])]
-    #[ORM\Column(length: 255)]
+    #[Groups(['user_index', 'user_show'])]
+    #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le nom est obligatoire.")]
+    #[Assert\Length(max: 50, maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $nom = null;
 
-    #[Groups(['user_index'])]
-    #[ORM\Column(length: 255)]
+    #[Groups(['user_index', 'user_show'])]
+    #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le prénom est obligatoire.")]
+    #[Assert\Length(max: 50, maxMessage: "Le prénom ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $prenom = null;
 
+    #[Groups(['user_show'])]
     #[ORM\Column]
+    #[Assert\NotNull(message: "Le statut actif/inactif doit être défini.")]
     private ?bool $isActive = null;
 
-    #[Groups(['user_index'])]
+    #[Groups(['user_index', 'user_show'])]
     #[ORM\Column]
+    #[Assert\NotNull(message: "La date d'acceptation des CGU est obligatoire.")]
+    #[Assert\Type(\DateTimeImmutable::class)]
     private ?\DateTimeImmutable $dateCGU = null;
 
-    #[Groups(['user_index'])]
+    #[Groups(['user_index', 'user_show'])]
     #[ORM\Column]
+    #[Assert\NotNull(message: "La date de création est obligatoire.")]
+    #[Assert\Type(\DateTimeImmutable::class)]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[Groups(['user_show'])]
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "L'avatar est obligatoire.")]
+    #[Assert\Url(message: "L'avatar doit être une URL valide.")]
     private ?string $avatar = null;
 
     #[ORM\Column(length: 255, nullable: true)]

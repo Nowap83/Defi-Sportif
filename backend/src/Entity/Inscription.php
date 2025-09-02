@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\InscriptionStatus;
 use App\Repository\InscriptionRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -19,6 +20,10 @@ class Inscription
     #[ORM\ManyToOne(inversedBy: 'inscriptions')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
+
+    #[ORM\ManyToOne(inversedBy: 'inscriptions')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Defi $defi = null;
 
     public function getId(): ?int
     {
@@ -45,6 +50,18 @@ class Inscription
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getDefi(): ?Defi
+    {
+        return $this->defi;
+    }
+
+    public function setDefi(?Defi $defi): static
+    {
+        $this->defi = $defi;
 
         return $this;
     }

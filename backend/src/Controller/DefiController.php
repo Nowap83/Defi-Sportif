@@ -28,31 +28,20 @@ class DefiController extends AbstractController
     #[Route('/{id}', name: 'detail', methods: ['GET'])]
     public function detail(Defi $defi): JsonResponse
     {
-        return $this->json($defi, 200, [], ['groups' => ['defi:read']]);
+        return $this->json($defi, 200, [], ['groups' => ['defi_list']]);
     }
 
     #[IsGranted('ROLE_ADMIN')]
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        // Debug: Log the incoming request
-        error_log("CREATE DEFI REQUEST - Method: " . $request->getMethod());
-        error_log("CREATE DEFI REQUEST - Content Type: " . $request->headers->get('content-type'));
-        error_log("CREATE DEFI REQUEST - Authorization: " . $request->headers->get('authorization'));
-
         $user = $this->getUser();
         if (!$user instanceof User) {
             error_log("User not authenticated or not instance of User");
             return $this->json(['success' => false, 'message' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
         }
 
-        error_log("User authenticated: " . $user->getEmail());
-
-        // Verify user has admin role
-        if (!in_array('ROLE_ADMIN', $user->getRoles())) {
-            error_log("User does not have ROLE_ADMIN");
-            return $this->json(['success' => false, 'message' => 'Accès refusé'], Response::HTTP_FORBIDDEN);
-        }
+        
 
         try {
             $defi = new Defi();
@@ -66,7 +55,6 @@ class DefiController extends AbstractController
             $defi->setMaxParticipant((int) $request->request->get('maxParticipant', 0));
             $defi->setCreateur($user);
 
-            // 🔹 Date (on s'assure que le format est correct)
             $dateDefi = $request->request->get('dateDefi');
             if ($dateDefi) {
                 try {
@@ -77,7 +65,6 @@ class DefiController extends AbstractController
                 }
             }
 
-            // 🔹 Upload d'image
             $file = $request->files->get('image');
             if ($file) {
                 $uploadDir = $this->getParameter('kernel.project_dir') . '/public/images/defis/';
@@ -98,8 +85,6 @@ class DefiController extends AbstractController
             $em->persist($defi);
             $em->flush();
 
-            error_log("Defi created successfully with ID: " . $defi->getId());
-
             return $this->json([
                 'success' => true,
                 'message' => 'Défi créé avec succès',
@@ -118,8 +103,8 @@ class DefiController extends AbstractController
                 ]
             ], 201);
         } catch (\Exception $e) {
-            error_log("Exception in create defi: " . $e->getMessage());
-            return $this->json(['success' => false, 'message' => 'Erreur serveur'], 500);
+            error_log("Error creating defi: " . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Erreur dans la création du défi'], 500);
         }
     }
 
@@ -148,7 +133,7 @@ class DefiController extends AbstractController
             'success' => true,
             'message' => 'Défi modifié avec succès',
             'defi' => $defi
-        ], 200, [], ['groups' => ['defi:read']]);
+        ], 200, [], ['groups' => ['defi_list']]);
     }
 
     #[IsGranted('ROLE_ADMIN')]

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Serializer\Annotation\Groups;
 
 
@@ -26,6 +27,13 @@ final class UserController extends AbstractController
         $users = $userRepository->findAll();
 
         return $this->json($users, 200, [], ['groups' => ['user_index']]);
+    }
+    #[IsGranted('ROLE_ADMIN')]
+    #[Route('/{id}', name: 'show', methods: ['GET'])]
+    public function show(User $user): JsonResponse
+    {
+        return $this->json($user, 200, [], ['groups' => ['user_show']] 
+        );
     }
     #[Route('/me', name: 'get_me', methods: ['GET'])]
     public function me(): JsonResponse
