@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install frontend dependencies & build
+      - name: Install and build frontend
         working-directory: frontend
         run: |
           npm ci
@@ -33,9 +33,18 @@ jobs:
       - name: Install backend dependencies
         working-directory: backend
         run: |
-          rm -rf var/cache/*
           composer install --no-dev --optimize-autoloader --no-scripts
           composer dump-autoload --optimize
+
+      - name: Create deployment package
+        run: |
+          # Créer une archive avec les fichiers nécessaires
+          mkdir -p deployment/backend deployment/frontend
+          cp -r backend/* deployment/backend/
+          cp -r frontend/build/* deployment/frontend/
+          # Inclure les autres fichiers nécessaires (gitignore, env, etc.)
+          cp -r backend/.env.production deployment/backend/.env
+          tar -czf deployment.tar.gz deployment/
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -45,9 +54,20 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
           script: |
-            cd /var/www/Defi-Sportif
-            git pull origin main
-            cd frontend && npm ci && npm run build
-            cd ../backend && composer install --no-dev --optimize-autoloader
+            cd /var/www/agorafit
+            # Supprimer l'ancien déploiement
+            rm -rf *
+            # Extraire le nouveau déploiement
+            tar -xzf /chemin/vers/deployment.tar.gz -C .
+            # Déplacer les fichiers au bon endroit
+            cp -r deployment/backend/* .
+            cp -r deployment/frontend/* ./public/
+            # Permissions
+            chmod -R 755 var/ logs/ public/
+            chown -R www-data:www-data var/ logs/
+            # Installer les dépendances et mettre à jour
+            composer install --no-dev --optimize-autoloader
             php bin/console cache:clear --env=prod
-
+            php bin/console cache:warmup --env=prod
+            # Redémarrer Apache si nécessaire
+            sudo systemctl reload apache2
