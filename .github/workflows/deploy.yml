@@ -32,10 +32,14 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
+        env:
+          APP_ENV: prod
         run: |
+          rm -rf var/cache/*
           composer install --no-dev --optimize-autoloader
           composer dump-autoload --optimize
-          php bin/console cache:clear --env=prod
+          php bin/console cache:clear
+
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
