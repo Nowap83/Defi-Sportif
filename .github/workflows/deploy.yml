@@ -34,6 +34,8 @@ jobs:
         working-directory: backend
         run: |
           composer install --no-dev --optimize-autoloader
+          composer dump-autoload --optimize
+          php bin/console cache:clear --env=prod
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
