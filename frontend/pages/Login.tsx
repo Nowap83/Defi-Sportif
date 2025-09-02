@@ -27,7 +27,7 @@ const Login: React.FC = () => {
         setIsLoading(true)
 
         try {
-            const res = await axios.post<{ token: string }>("http://localhost:8000/auth/login", formData);
+            const res = await axios.post<{ token: string }>("http://91.168.22.101/api/auth/login", formData);
 
             const { token } = res.data;
             setToken(token);

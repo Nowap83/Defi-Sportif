@@ -46,7 +46,7 @@ const Register: React.FC = () => {
     try {
       signupSchema.parse(formData); // la verif Zod
 
-      const response = await axios.post("http://localhost:8000/auth/register", {
+      const response = await axios.post("http://91.168.22.101/api/auth/register", {
         headers: {
           "Content-Type": "application/json",
         },

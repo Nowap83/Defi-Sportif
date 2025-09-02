@@ -14,7 +14,7 @@ const Accueil = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card bg-base-200 shadow-xl p-6">
-          <h2 className="text-xl font-semibold mb-2">🏆 Participez à des défis</h2>
+          <h2 className="text-xl font-semibold mb-2"> Participez à des défis</h2>
           <p>
             Découvrez une variété de défis sportifs créés par la communauté et par les organisateurs.
             Inscrivez-vous et mettez vos capacités à l’épreuve.
@@ -22,7 +22,7 @@ const Accueil = () => {
         </div>
 
         <div className="card bg-base-200 shadow-xl p-6">
-          <h2 className="text-xl font-semibold mb-2">📊 Suivez vos performances</h2>
+          <h2 className="text-xl font-semibold mb-2"> Suivez vos performances</h2>
           <p>
             Enregistrez vos résultats après chaque défi : temps, distance, réussite. 
             Visualisez vos progrès grâce aux statistiques et graphiques interactifs.
@@ -30,7 +30,7 @@ const Accueil = () => {
         </div>
 
         <div className="card bg-base-200 shadow-xl p-6">
-          <h2 className="text-xl font-semibold mb-2">🤝 Rejoignez la communauté</h2>
+          <h2 className="text-xl font-semibold mb-2"> Rejoignez la communauté</h2>
           <p>
             Connectez-vous avec d’autres passionnés de sport, échangez vos expériences
             et inspirez-vous des performances de vos amis.
