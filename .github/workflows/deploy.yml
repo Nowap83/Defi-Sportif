@@ -1,0 +1,49 @@
+name: Deploy AgoraFit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies & build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, intl, zip
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          composer install --no-dev --optimize-autoloader
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/Defi-Sportif
+            git pull origin main
+            cd frontend && npm ci && npm run build
+            cd ../backend && composer install --no-dev --optimize-autoloader
+            php bin/console cache:clear --env=prod

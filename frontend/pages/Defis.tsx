@@ -76,7 +76,7 @@ const Defis = () => {
   if (!token) return;
 
   try {
-    const updatedDefi = await updateDefi(token, id, updatedData);
+    const updatedDefi = await updateDefi( id, updatedData, token);
 
     setDefis((prevDefis) =>
       prevDefis.map((d) => (d.id === id ? updatedDefi : d))
