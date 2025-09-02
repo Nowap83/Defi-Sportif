@@ -58,7 +58,7 @@ class AuthController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        $urlFrontend = 'http://localhost:5173/verify/' . $user->getVerificationToken();
+        $urlFrontend = 'http://91.168.22.101/verify/' . $user->getVerificationToken();
         $mailer->sendWelcomeEmail($user->getEmail(), $user->getPrenom(), $urlFrontend);
 
         return $this->json(
@@ -136,9 +136,7 @@ class AuthController extends AbstractController
         }
 
         $user = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
-        
-        // On renvoie toujours un message de succès pour des raisons de sécurité
-        // (éviter l'énumération des emails existants)
+
         if (!$user) {
             return $this->json([
                 'success' => true,
@@ -147,7 +145,6 @@ class AuthController extends AbstractController
             ], 200);
         }
 
-        // Vérifier si l'utilisateur est actif
         if (!$user->isActive()) {
             return $this->json([
                 'success' => false,
@@ -156,14 +153,12 @@ class AuthController extends AbstractController
             ], 400);
         }
 
-        // Générer un token de réinitialisation
         $resetToken = bin2hex(random_bytes(32));
         $user->setResetToken($resetToken);
         $user->setResetTokenExpiresAt(new \DateTimeImmutable('+1 hour'));
         
         $em->flush();
 
-        // URL de réinitialisation
         $resetUrl = 'http://localhost:5173/reset-password/' . $resetToken;
         
         $emailSent = $mailer->sendPasswordResetEmail(
@@ -204,7 +199,6 @@ class AuthController extends AbstractController
             ], 400);
         }
 
-        // Vérification des champs requis
         if (!isset($data['token']) || !isset($data['password'])) {
             return $this->json([
                 'success' => false,
@@ -213,7 +207,6 @@ class AuthController extends AbstractController
             ], 400);
         }
 
-        // Validation du mot de passe
         $violations = $validator->validate($data['password'], [
             new Assert\NotBlank(),
             new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.')
@@ -246,7 +239,6 @@ class AuthController extends AbstractController
             ], 400);
         }
 
-        // Réinitialiser le mot de passe
         $user->setPassword($hasher->hashPassword($user, $data['password']));
         $user->setResetToken(null);
         $user->setResetTokenExpiresAt(null);

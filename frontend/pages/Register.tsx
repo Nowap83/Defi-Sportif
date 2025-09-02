@@ -46,21 +46,15 @@ const Register: React.FC = () => {
     try {
       signupSchema.parse(formData); // la verif Zod
 
-      const response = await axios.post(
-        "http://91.168.22.101/api/auth/register",
-        {
-          nom: formData.nom,
-          prenom: formData.prenom,
-          email: formData.email,
-          password: formData.password,
+      const response = await axios.post("http://91.168.22.101/api/auth/register", {
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
+        nom: formData.nom,
+        prenom: formData.prenom,
+        email: formData.email,
+        password: formData.password,
+      });
 
 
       const data = response.data;

@@ -19,7 +19,7 @@ const Verify = () => {
       }
 
       try {
-        const res = await axios.get(`http://localhost:8000/auth/verify-mail/${token}`);
+        const res = await axios.get(`http://91.168.22.101/api/auth/verify-mail/${token}`);
 
         if (res.data?.success) {
           setVerified(true);
