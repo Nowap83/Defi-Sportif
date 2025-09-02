@@ -38,7 +38,6 @@ jobs:
           rm -rf var/cache/*
           composer install --no-dev --optimize-autoloader
           composer dump-autoload --optimize
-          php bin/console cache:clear
 
 
       - name: Deploy to server
