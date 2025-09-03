@@ -1,0 +1,643 @@
+openapi: 3.0.3
+info:
+  title: API REST Défis Sportifs
+  version: 1.0.0
+  description: |
+    Spécification OpenAPI pour l'application Défis Sportifs basée sur le cahier des charges.
+servers:
+  - url: https://91.168.22.101/api
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    SizeParam:
+      in: query
+      name: size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 15 }
+    SortParam:
+      in: query
+      name: sort
+      schema: { type: string, example: "date_defi,asc" }
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+    BasicResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Opération effectuée avec succès"
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Erreur dans ..."
+    UserList:
+      type: object
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        prenom: { type: string }
+        email: { type: string, format: email }
+        roles: { type: string, enum: [ROLE_USER, ROLE_ADMIN] }
+        dateCGU: { type: string, format: date-time}
+        createdAt: { type: string, format: date-time }
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        prenom: { type: string }
+        email: { type: string, format: email }
+        roles: { type: string, enum: [ROLE_USER, ROLE_ADMIN] }
+        actif: { type: boolean }
+        dateCGU: { type: string, format: date-time}
+        createdAt: { type: string, format: date-time }
+        avatarUrl: { type: string, nullable: true }
+    UserCreate:
+      type: object
+      required: [nom, prenom, email, password, dateCGU]
+      properties:
+        nom: { type: string }
+        prenom: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        dateCGU: { type: string, format: date-time }
+    UserUpdate:
+      type: object
+      properties:
+        nom: { type: string }
+        prenom: { type: string }
+        password: { type: string, format: password }
+        avatarUrl: { type: string, nullable: true }
+    UserDelete:
+      type: object
+      properties:
+        success: { type: boolean, example: true}
+        message: { type: string,  example: "L'utilisateur 42 a été supprimé avec succès"}
+    AuthLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    AuthToken:
+      type: object
+      properties:
+        token: { type: string }
+    Defi:
+      type: object
+      properties:
+        id: { type: string }
+        titre: { type: string }
+        description: { type: string }
+        statut: { type: string, enum: [brouillon, publie_a_venir, publie_termine, supprime, annule] }
+        typeDefi: { type: string }
+        dateDefi: { type: string, format: date }
+        region: { type: string }
+        pays: { type: string }
+        distance: { type: number, format: float }
+        nbMinParticipants: { type: integer, nullable: true }
+        nbMaxParticipants: { type: integer, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        createurId: { type: string }
+    DefiCreate:
+      type: object
+      properties:
+        titre: { type: string, example: "Marathon de Paris" }
+        description: { type: string, example: "Course de 42km dans Paris" }
+        typeDefi: { type: string, example: "course" }
+        dateDefi: { type: string, format: date, example: "2025-09-10" }
+        region: { type: string, example: "Île-de-France" }
+        pays: { type: string, example: "France" }
+        distance: { type: number, format: float, example: 42.195 }
+        minParticipant: { type: integer, nullable: true, example: 10 }
+        maxParticipant: { type: integer, nullable: true, example: 5000 }
+        image: { type: string, nullable: true, example: "/images/defis/marathon.png" }
+    DefiCreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Défi créé avec succès"
+        defi:
+          type: object
+          properties:
+            id: { type: integer, example: 12 }
+            titre: { type: string, example: "Marathon de Paris" }
+            description: { type: string, example: "Course de 42km dans Paris" }
+            dateDefi: { type: string, format: date, example: "2025-09-10" }
+            typeDefi: { type: string, example: "course" }
+            region: { type: string, example: "Île-de-France" }
+            pays: { type: string, example: "France" }
+            distance: { type: number, format: float, example: 42.195 }
+            minParticipant: { type: integer, nullable: true, example: 10 }
+            maxParticipant: { type: integer, nullable: true, example: 5000 }
+            image: { type: string, nullable: true, example: "/images/defis/marathon.png" }
+    DefiUpdate:
+      type: object
+      properties:
+        titre: { type: string }
+        description: { type: string }
+        dateDefi: { type: string, format: date }
+        typeDefi: { type: string }
+        region: { type: string }
+        pays: { type: string }
+        distance: { type: number, format: float }
+        minParticipant: { type: integer }
+        maxParticipant: { type: integer }
+        image: { type: string }
+        
+    DefiUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Défi modifié avec succès"
+        defi:
+          $ref: '#/components/schemas/Defi'
+    DefiDeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Défi supprimé avec succès"
+    FiltreDefis:
+      type: object
+      properties:
+        statut: { type: string }
+        typeDefi: { type: string }
+        region: { type: string }
+        pays: { type: string }
+        minDistance: { type: number }
+        maxDistance: { type: number }
+        dateFrom: { type: string, format: date }
+        dateTo: { type: string, format: date }
+        q: { type: string, description: "Recherche plein-texte (titre + description)" }
+    InscriptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Inscription créée avec succès"
+        inscription:
+          $ref: '#/components/schemas/InscriptionDetail'
+
+    InscriptionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        user:
+          type: string
+          description: Email de l'utilisateur
+          example: "john.doe@example.com"
+        defi:
+          type: string
+          description: Titre du défi
+          example: "Marathon de lecture"
+        dateInscription:
+          type: string
+          format: date-time
+          example: "2025-09-01 14:30:00"
+
+    InscriptionAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 99
+        user:
+          type: string
+          example: "admin@example.com"
+        dateInscription:
+          type: string
+          format: date-time
+          example: "2025-08-31 09:15:00"
+
+    CheckInscriptionResponse:
+      type: object
+      properties:
+        inscrit:
+          type: boolean
+          example: true
+        inscription:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 77
+            dateInscription:
+              type: string
+              format: date-time
+              example: "2025-09-01 10:05:00"
+    Performance:
+      type: object
+      properties:
+        id: { type: string }
+        inscriptionId: { type: string }
+        temps: { type: string, format: time, nullable: true }
+        distance: { type: number, format: float, nullable: true }
+        termine: { type: boolean }
+    Like:
+      type: object
+      properties:
+        id: { type: string }
+        defiId: { type: string }
+        utilisateurId: { type: string }
+        dateLike: { type: string, format: date-time }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        utilisateurId: { type: string }
+        contenu: { type: string }
+        type: { type: string, enum: [mail, interne] }
+        statut: { type: string, enum: [non_lu, lu] }
+        createdAt: { type: string, format: date-time }
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscription d'un utilisateur
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        '201': { description: Utilisateur créé (email de vérification envoyé) }
+        '400': { description: Données invalides, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Vérifie l'email via un token reçu par mail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200': { description: Compte activé }
+        '400': { description: Token invalide/expiré }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion et obtention d'un JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLogin' }
+      responses:
+        '200':
+          description: Jeton renvoyé
+          content: { application/json: { schema: { $ref: '#/components/schemas/AuthToken' } } }
+        '401': { description: Invalid credentials. }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Demande de réinitialisation du mot de passe (mail envoyé)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '204': { description: Mail envoyé si l'email existe }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Réinitialise le mot de passe via token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '204': { description: Mot de passe mis à jour }
+
+  /me:
+    get:
+      tags: [Utilisateur]
+      summary: Récupère le profil courant
+      security:
+      - bearerAuth: []
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+    patch:
+      tags: [Utilisateur]
+      summary: Met à jour le profil courant
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200': { description: Profil mis à jour }
+  /me/avatar:
+    put:
+      tags: [Utilisateur]
+      summary: Met à jour l'avatar (URL ou upload presigné)
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [avatarUrl]
+              properties:
+                avatarUrl: { type: string }
+      responses:
+        '200': { description: Avatar mis à jour }
+  /user:
+    get:
+      tags: [Admin]
+      summary: Liste des utilisateurs (admin)
+      parameters: [ { $ref: '#/components/parameters/PageParam' }, { $ref: '#/components/parameters/SizeParam' }, { $ref: '#/components/parameters/SortParam' } ]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/UserList' } } } } }
+  /user/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [Admin]
+      summary: Détails d'un utilisateur (admin)
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+    delete:
+      tags: [Admin]
+      summary: Supprimer/désactiver un utilisateur
+      responses:
+        '204': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/UserDelete' } } } }
+
+  /defis:
+    get:
+      tags: [Défis]
+      summary: Liste des défis publiés (pagination + filtres)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortParam'
+        - in: query
+          name: filtre
+          schema: { $ref: '#/components/schemas/FiltreDefis' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Defi' } }
+    post:
+      tags: [Défis, Admin]
+      summary: Créer un défi (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefiCreate'
+      responses:
+        '201':
+          description: Défi créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefiCreateResponse'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /defis/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [Défis]
+      summary: Détails d'un défi
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Defi'
+
+    put:
+      tags: [Défis, Admin]
+      summary: Modifier un défi (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefiUpdate'
+      responses:
+        '200':
+          description: Défi modifié avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefiUpdateResponse'
+
+    delete:
+      tags: [Défis, Admin]
+      summary: Supprimer un défi (admin)
+      responses:
+        '200':
+          description: Défi supprimé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefiDeleteResponse'
+
+  /inscriptions/defis/{id}:
+    post:
+      tags: [Inscriptions]
+      summary: Inscrire l'utilisateur courant à un défi
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '201':
+          description: Inscription créée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionResponse'
+        '400': { description: Déjà inscrit à ce défi }
+        '401': { description: Non authentifié }
+        '404': { description: Défi non trouvé }
+
+    get:
+      tags: [Inscriptions, Admin]
+      summary: Liste des inscrits d'un défi (admin)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InscriptionAdmin'
+        '403': { description: Accès refusé (ROLE_ADMIN requis) }
+        '404': { description: Défi non trouvé }
+
+  /inscriptions/defis/{id}/me:
+    get:
+      tags: [Inscriptions]
+      summary: Vérifier si l'utilisateur courant est inscrit à ce défi
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Statut de l'inscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInscriptionResponse'
+        '401': { description: Non authentifié }
+        '404': { description: Défi non trouvé }
+
+  /inscriptions/{id}:
+    delete:
+      tags: [Inscriptions, Admin]
+      summary: Supprimer une inscription (admin)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Inscription supprimée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '403': { description: Accès refusé (ROLE_ADMIN requis) }
+        '404': { description: Inscription non trouvée }
+
+  /inscriptions/{id}/request-cancel:
+    post:
+      tags: [Inscriptions]
+      summary: Demande de désinscription (notifie l'admin)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '202':
+          description: Demande enregistrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '403': { description: Accès refusé (propriétaire requis) }
+        '404': { description: Inscription non trouvée }
+
+  /inscriptions/{id}/performances:
+    post:
+      tags: [Performances]
+      summary: Déposer une performance après la fin du défi
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [termine]
+              properties:
+                temps: { type: string, format: time, nullable: true }
+                distance: { type: number, format: float, nullable: true }
+                termine: { type: boolean }
+      responses:
+        '201': { description: Performance créée, content: { application/json: { schema: { $ref: '#/components/schemas/Performance' } } } }
+    get:
+      tags: [Performances, Admin]
+      summary: Lister les performances liées à une inscription (admin)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Performance' } } } } }
+
+  /defis/{id}/likes:
+    get:
+      tags: [Likes]
+      summary: Lister les likes d'un défi (admin ou organisateur)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Like' } } } } }
+    post:
+      tags: [Likes]
+      summary: Liker un défi (unique par utilisateur)
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '201': { description: Like créé }
+    delete:
+      tags: [Likes]
+      summary: Retirer son like
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '204': { description: Supprimé }

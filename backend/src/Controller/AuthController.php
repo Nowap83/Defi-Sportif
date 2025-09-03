@@ -17,7 +17,7 @@ use App\Service\MailerService;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[Route('/auth', name: 'api_auth_')]
+#[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
     #[Route('/login', name: 'login', methods: ['POST'])]
