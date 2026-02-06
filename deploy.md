@@ -2,12 +2,12 @@
 
 ## Vue d'ensemble
 
-Ce document décrit le processus de déploiement automatisé de l'application AgoraFit sur une VM Debian via GitHub Actions.
+Ce document décrit le processus de déploiement automatisé de l'application AgoraFit sur une VM Proxmox via GitHub Actions.
 
 ## Architecture
 
 ### Infrastructure
-- **Hébergement** : VM debian 12 dans VM Proxmox
+- **Hébergement** : VM Debian 12 dans système Proxmox
 - **Chemin de déploiement** : `/var/www/Defi-Sportif`
 - **Port SSH** : 2222
 - **CI/CD** : GitHub Actions
@@ -195,6 +195,6 @@ Optimise l'autoloader pour la production
 ```
 Connexion SSH au serveur et exécution des commandes de déploiement.
 
-Maintenu par : Alexandre BROZZU
-Dernière mise à jour : 03/09/25
-Version : 1.0
+- Maintenu par : Alexandre BROZZU
+- Dernière mise à jour : 03/09/25
+- Version : 1.0
