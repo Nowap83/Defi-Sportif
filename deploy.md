@@ -2,12 +2,12 @@
 
 ## Vue d'ensemble
 
-Ce document décrit le processus de déploiement automatisé de l'application AgoraFit sur une VM Proxmox via GitHub Actions.
+Ce document décrit le processus de déploiement automatisé de l'application AgoraFit sur une VM Debian via GitHub Actions.
 
 ## Architecture
 
 ### Infrastructure
-- **Hébergement** : VM Proxmox
+- **Hébergement** : VM debian 12 dans VM Proxmox
 - **Chemin de déploiement** : `/var/www/Defi-Sportif`
 - **Port SSH** : 2222
 - **CI/CD** : GitHub Actions
@@ -19,7 +19,7 @@ Ce document décrit le processus de déploiement automatisé de l'application Ag
 
 ## Configuration Préalable
 
-### 1. Configuration de la VM Proxmox
+### 1. Configuration de la VM Debian
 
 #### Installation des dépendances système sur système Debian
 
@@ -79,22 +79,17 @@ git pull origin main
 
 Ajouts des secrets via : Settings > Secrets and variables > Actions dans le repository Defi-Sportif :
 
-SERVER_HOST 	
-SERVER_USER 	
-SSH_PRIVATE_KEY 	
+- SERVER_HOST 	
+- SERVER_USER 	
+- SSH_PRIVATE_KEY 	
 
-#### Sur votre machine locale
+#### Sur la VM Debian
 
 ```bash
 ssh-keygen -t rsa -b 4096 -C "github-deploy" -f ~/.ssh/agorafit_deploy
 ```
-#### Copie de la clé publique sur le serveur
 
-```bash
-ssh-copy-id -i ~/.ssh/agorafit_deploy.pub -p 2222 user@votre-serveur
-```
-
-#### Copie du  contenu de la clé privée pour GitHub
+#### Copie du contenu de la clé privée pour GitHub
 
 ```bash
 cat ~/.ssh/agorafit_deploy
@@ -111,10 +106,11 @@ nano .env.local
 ```
 
 #### Ajout de :
+```nano
 APP_ENV=prod
 APP_DEBUG=0
 DATABASE_URL="mysql://user:password@127.0.0.1:3306/agorafit"
-
+```
 #### Permissions
 
 ```bash
@@ -132,57 +128,57 @@ Le déploiement se déclenche automatiquement à chaque push sur la branche main
 Étapes du Pipeline
 
 #### 1. Checkout du Code
-
+```yaml
 - name: Checkout code
   uses: actions/checkout@v3
-
+```
 Récupère le code source depuis le repository.
 
 #### 2. Configuration Node.js
-
+```yaml
 - name: Setup Node.js
   uses: actions/setup-node@v3
   with:
     node-version: '20'
-
+```
 Installe Node.js version 20 pour le build du frontend.
 
 #### 3. Build du Frontend
-
+```yaml
 - name: Install frontend dependencies & build
   working-directory: frontend
   run: |
     npm ci
     npm run build
-
+```
 npm ci : Installation propre des dépendances
 npm run build : Compilation du frontend pour la production
 
 #### 4. Configuration PHP
-
+```yaml
 - name: Setup PHP
   uses: shivammathur/setup-php@v2
   with:
     php-version: '8.2'
     extensions: mbstring, pdo, pdo_mysql, intl, zip
-
+```
 Configure PHP 8.2 avec les extensions nécessaires.
 
 #### 5. Installation des Dépendances Backend
-
+```yaml
 - name: Install backend dependencies
   working-directory: backend
   run: |
     rm -rf var/cache/*
     composer install --no-dev --optimize-autoloader --no-scripts
     composer dump-autoload --optimize
-
+```
 Nettoie le cache
 Installe les dépendances PHP sans les packages de développement
 Optimise l'autoloader pour la production
 
 #### 6. Déploiement sur le Serveur
-
+```yaml
 - name: Deploy to server
   uses: appleboy/ssh-action@v1.0.3
   with:
@@ -196,7 +192,7 @@ Optimise l'autoloader pour la production
       cd frontend && npm ci && npm run build
       cd ../backend && composer install --no-dev --optimize-autoloader
       php bin/console cache:clear --env=prod
-
+```
 Connexion SSH au serveur et exécution des commandes de déploiement.
 
 Maintenu par : Alexandre BROZZU
